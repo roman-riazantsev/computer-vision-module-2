@@ -1,8 +1,8 @@
 import cv2
 
-from lab_1_1.viz_utils import *
-from lab_2_1.conv_ops import get_edges
-from lab_2_1.viz_utils import subplot_images
+# from viz_utils import *
+# from conv_ops import get_edges
+# from viz_utils import subplot_images
 
 import numpy as np
 import cv2

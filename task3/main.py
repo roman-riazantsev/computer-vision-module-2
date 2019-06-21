@@ -34,6 +34,7 @@ def segmentation_function_2(img):
     snake = active_contour(gaussian(img, 3),
                            init, alpha=0.015, beta=10, gamma=0.001)
 
+
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.imshow(img, cmap=plt.cm.gray)
     ax.plot(init[:, 0], init[:, 1], '--r', lw=3)
@@ -46,7 +47,6 @@ def segmentation_function_2(img):
 
 def main():
     path = "images/pear.jpg"
-
     img = cv2.imread(path)
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
