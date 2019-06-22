@@ -18,24 +18,24 @@ def get_result_1(img_1):
 
 
 def main():
+    # open image:
     path = "images/count1.jpg"
     img = cv2.imread(path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    shifted = get_result_1(img)
-
+    # apply mean shift filter
+    shifted = cv2.pyrMeanShiftFiltering(img, 11, 21)
+    # visualize:
     subplot = np.concatenate((img, shifted), axis=1)
-    # cv2.imshow("shifted", subplot)
-    # cv2.waitKey(-1)
-
+    cv2.imshow("shifted", subplot)
+    cv2.waitKey(-1)
+    # threshold
     gray = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 70, 255, cv2.THRESH_BINARY)[1]
-
+    # something
     kernel = np.ones((5, 5), np.uint8)
     thresh = cv2.dilate(thresh, kernel, iterations=1)
-
-    # cv2.imshow("thresh", thresh)
-    # cv2.waitKey(-1)
+    cv2.imshow("thresh", thresh)
+    cv2.waitKey(-1)
 
     # find contours in the thresholded image
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
