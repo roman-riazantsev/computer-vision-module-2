@@ -11,7 +11,7 @@ def segmentation_function_1(img):
     mask = np.zeros((w, h), np.uint8)
     bgdModel = np.zeros((1, 65), np.float64)
     fgdModel = np.zeros((1, 65), np.float64)
-    rect = (5, 5, w-5, h-5)
+    rect = (5, 5, w - 5, h - 5)
     cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 2, cv2.GC_INIT_WITH_RECT)
     mask = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
 
@@ -33,7 +33,6 @@ def segmentation_function_2(img):
 
     snake = active_contour(gaussian(img, 3),
                            init, alpha=0.015, beta=10, gamma=0.001)
-
 
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.imshow(img, cmap=plt.cm.gray)
