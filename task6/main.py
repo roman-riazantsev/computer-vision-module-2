@@ -26,8 +26,12 @@ if __name__ == "__main__":
     img2 = cv2.resize(img2, None, fx=0.25, fy=0.25)
 
     patch_match = PatchMatch(img1, img2, kernel_size=3)
-    matches = patch_match.compute_matches(iters=1)
-
+    t, matches = patch_match.compute_matches(iters=1)
     result = reconstruct(matches, img1, img2)
-    cv2.imshow("result", result)
+    cv2.imshow("res", result)
     cv2.waitKey(-1)
+
+    cv2.imwrite("results/result.jpg", result * 255.)
+
+    with open("results/time.txt", "w") as text_file:
+        text_file.write("Top to bottom and back in :{}".format(t))

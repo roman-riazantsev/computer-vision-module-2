@@ -1,5 +1,4 @@
 import time
-
 import numpy as np
 
 
@@ -90,8 +89,8 @@ class PatchMatch:
                     self.random_search(pos, self.img1, self.img2)
             end = time.time()
             print("top to bottom and back in :{}".format(end - start))
-
-        return self.matches
+        t = end - start
+        return t, self.matches
 
     def match_patches(self, pos, descent):
         h, w = np.array(self.img1.shape[:2]) - self.pad_width + 1

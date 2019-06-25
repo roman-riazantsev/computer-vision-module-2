@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-
-import cv2
-import numpy as np
 import imutils
 from task2.light_utils import reset_light
 from skimage.feature import peak_local_max
@@ -62,8 +59,6 @@ def get_mask_2(img, threshold):
     else:
         img2 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)[1]
 
-
-
     kernel = np.ones((3, 3), np.uint8)
     img2 = cv2.dilate(img2, kernel, iterations=1)
 
@@ -78,16 +73,19 @@ def get_mask_3(img, threshold):
 
     mask = cv2.fastNlMeansDenoising(img2, None, 7, 7, 10)
 
-    # kernel = np.array([[0, 1, 0],
-    #                    [1, 1, 1],
-    #                    [0, 1, 0]], np.uint8)
-    # # mask = cv2.dilate(mask, kernel, iterations=1)
-    # mask = cv2.erode(mask, kernel, iterations=4)
-
     kernel = np.ones((3, 3), np.uint8)
     mask = cv2.dilate(mask, kernel, iterations=3)
 
     return mask
+
+
+def get_mask_4(img, threshold):
+    if isinstance(threshold, list):
+        img2 = tilted_threshold(img, threshold)
+    else:
+        img2 = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)[1]
+
+    return img2
 
 
 def find_contours(img, thresh):
@@ -106,7 +104,7 @@ def find_contours(img, thresh):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
         cv2.drawContours(image, [c], -1, (0, 255, 0), 1)
 
-    return cnts, image
+    return len(cnts), image
 
 
 def analyse_connections(D, thresh):
@@ -117,7 +115,8 @@ def analyse_connections(D, thresh):
     # using 8-connectivity, then appy the Watershed algorithm
     markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
     labels = watershed(-D, markers, mask=thresh)
-    print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
+    res = len(np.unique(labels)) - 1
+    print("[INFO] {} unique segments found".format(res))
 
     label_hue = np.uint8(179 * labels / np.max(labels))
     blank_ch = 255 * np.ones_like(label_hue)
@@ -129,7 +128,7 @@ def analyse_connections(D, thresh):
     # set bg label to black
     labeled_img[label_hue == 0] = 0
 
-    return labels, labeled_img
+    return labels, labeled_img, res
 
 
 def distance_transform(thresh):
@@ -196,18 +195,14 @@ def open_img_2(path):
 
 
 def extraction_function_1(img):
-    # img2 = preprocess(img, 3, -100, resize=False)
-    # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # img2 = cv2.equalizeHist(img)
     img = cv2.resize(img, None, fx=2, fy=2)
     img2 = preprocess(img, 2, 0)
-    mask = get_mask_2(img2, threshold=[100, 0, 100, 0.7])
-    subplot(img2, mask)
-    cnts, img2 = find_contours(img, mask)
+    mask = get_mask_2(img2, threshold=[100, 50, 5, 0.7])
+    cnts1, img2 = find_contours(img, mask)
     img2 = distance_transform(mask)
-    labels, colorful = analyse_connections(img2, mask)
+    labels, colorful, cnts2 = analyse_connections(img2, mask)
     img = draw_labels(img, mask, labels)
-    return img
+    return img, cnts2
 
 
 def extraction_function_2(img):
@@ -215,35 +210,38 @@ def extraction_function_2(img):
     mask = get_mask(img2, threshold=60)
     cnts, img2 = find_contours(img, mask)
     img2 = distance_transform(mask)
-    labels, colorful = analyse_connections(img2, mask)
+    labels, colorful, cnts = analyse_connections(img2, mask)
     img = draw_labels(img, mask, labels)
 
-    return img
+    return img, cnts
 
 
 def extraction_function_3(img):
-    img2 = img.copy()
-    # img = cv2.resize(img, None, fx=2, fy=2)
-
-    #
-
-    # lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    # lab_planes = cv2.split(lab)
-    # clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
-    # lab_planes[0] = clahe.apply(lab_planes[0])
-    # lab = cv2.merge(lab_planes)
-    # img2 = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-    # img2 = cv2.pyrMeanShiftFiltering(img, 7, 21)
+    img = cv2.resize(img, None, fx=2, fy=2)
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    lab_planes = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(12, 12))
+    lab_planes[0] = clahe.apply(lab_planes[0])
+    lab = cv2.merge(lab_planes)
+    img2 = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
     img2 = preprocess(img2, 1, 0)
-    # subplot(img, shifted)
+    mask = get_mask_4(img2, threshold=130)
 
-    mask = get_mask_2(img2, threshold=110)
+    kernel = np.ones((3, 3))
+    mask = cv2.fastNlMeansDenoising(mask, None, 3, 7, 16)
+    mask = cv2.erode(mask, kernel, iterations=1)
+    mask = cv2.dilate(mask, kernel, iterations=1)
+    #
+    # kernel = np.ones((3, 3), np.uint8)
+    # mask = cv2.dilate(mask, kernel, iterations=3)
+
     cnts, img2 = find_contours(img, mask)
     # img2 = distance_transform(mask)
-    # labels, colorful = analyse_connections(img2, mask)
-    # img = draw_labels(img, mask, labels)
-    return img2
+    # labels, colorful, cnts2 = analyse_connections(img2, mask)
+    # img2 = draw_labels(img, mask, labels)
+
+    return img2, cnts
 
 
 def extraction_function_4(img):
@@ -257,22 +255,16 @@ def extraction_function_4(img):
     img = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
     img2 = preprocess(img, 3, 0)
-    # img2 = cv2.equalizeHist(img2)
     mask = get_mask(img2, threshold=[170, 200, 150, 0.3])
-    subplot(img, mask)
-    # mask = get_mask(img2, threshold=[50, 60, 20, 0.3])
     cnts, img2 = find_contours(img, mask)
     img2 = distance_transform(mask)
-    labels, colorful = analyse_connections(img2, mask)
+    labels, colorful, cnts2 = analyse_connections(img2, mask)
     img = draw_labels(img, mask, labels)
 
-    return img
+    return img, cnts2
 
 
 def extraction_function_10(img):
-    img2 = img.copy()
-    # img2 = preprocess(img, 1.5, 0)
-
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     lab_planes = cv2.split(lab)
     clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
@@ -282,15 +274,17 @@ def extraction_function_10(img):
 
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     img2 = cv2.equalizeHist(img2)
-    # img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
 
-    mask = get_mask_3(img2, threshold=200)
-    subplot(img2, mask)
-    cnts, img2 = find_contours(img, mask)
-    img2 = distance_transform(mask)
-    labels, colorful = analyse_connections(img2, mask)
-    img = draw_labels(img, mask, labels)
-    return img
+    mask = get_mask_4(img2, threshold=210)
+
+    mask = cv2.fastNlMeansDenoising(mask, None, 21, 21, 10)
+
+    kernel = np.ones((3, 3), np.uint8)
+    mask = cv2.dilate(mask, kernel, iterations=3)
+
+    cnts2, img2 = find_contours(img, mask)
+
+    return img2, cnts2
 
 
 extraction_functions = [extraction_function_1, extraction_function_2, extraction_function_3, extraction_function_4,

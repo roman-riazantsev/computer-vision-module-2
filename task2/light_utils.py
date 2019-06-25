@@ -1,8 +1,5 @@
 from __future__ import print_function
-from builtins import input
-import cv2 as cv
 import numpy as np
-import argparse
 
 
 def reset_light(image, alpha, beta):
@@ -19,7 +16,3 @@ def reset_light(image, alpha, beta):
                 new_image[y, x, c] = np.clip(alpha * image[y, x, c] + beta, 0, 255)
 
     return new_image
-
-
-
-
