@@ -19,7 +19,3 @@ def reset_light(image, alpha, beta):
                 new_image[y, x, c] = np.clip(alpha * image[y, x, c] + beta, 0, 255)
 
     return new_image
-
-
-
-

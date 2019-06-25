@@ -4,6 +4,7 @@ import numpy as np
 from task2.light_utils import reset_light
 
 
+
 def process_photo(path):
     img = cv2.imread(path)
     # after = reset_light(img, 1, -20)
