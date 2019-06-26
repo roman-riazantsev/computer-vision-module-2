@@ -18,7 +18,7 @@ def save_result(images, i, cnts):
 
 
 def main():
-    for i in [5]:
+    for i in [7]:
         path = "images/count{}.jpg".format(i)
         img1 = loading_functions[i - 1](path)
         img = img1.copy()

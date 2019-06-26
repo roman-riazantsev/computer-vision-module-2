@@ -318,6 +318,32 @@ def extraction_function_5(img):
     return img2, cnts
 
 
+def extraction_function_6(img):
+    img = cv2.resize(img, None, fx=2, fy=2)
+    img = cv2clahe(img, 8, 4)
+    img2 = preprocess(img, 1, 0)
+    img2 = cv2.equalizeHist(img2)
+    mask = get_mask_4(img2, threshold=150)
+    cnts, img2 = find_contours(img, mask)
+    return img2, cnts
+
+def extraction_function_7(img):
+    # img = cv2.resize(img, None, fx=2, fy=2)
+    # img = cv2clahe(img, 8, 4)
+    img2 = cv2.fastNlMeansDenoising(img, None, 21, 21, 16)
+    img2 = preprocess(img2, 1, 0)
+    # img2 = cv2.equalizeHist(img2)
+    mask = get_mask_4(img2, threshold=[170, 150, 140, 0.5])
+    kernel = np.ones((3, 3))
+    mask = cv2.erode(mask, kernel, iterations=5)
+    # mask = cv2.dilate(mask, kernel, iterations=2)
+    # mask = cv2.erode(mask, kernel, iterations=1)
+    # mask = cv2.dilate(mask, kernel, iterations=1)
+    # mask = cv2.dilate(mask, kernel, iterations=1)
+    cnts, img2 = find_contours(img, mask)
+    return img2, cnts
+
+
 def extraction_function_10(img):
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     lab_planes = cv2.split(lab)
@@ -342,7 +368,7 @@ def extraction_function_10(img):
 
 
 extraction_functions = [extraction_function_1, extraction_function_2, extraction_function_3, extraction_function_4,
-                        extraction_function_5, extraction_function_1, extraction_function_1, extraction_function_1,
+                        extraction_function_5, extraction_function_6, extraction_function_7, extraction_function_1,
                         extraction_function_1, extraction_function_10, extraction_function_1]
 
 loading_functions = [open_img_1, open_img_2, open_img_1, open_img_1, open_img_1, open_img_1,
