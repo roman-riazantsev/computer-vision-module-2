@@ -106,5 +106,3 @@ with open("results/result.txt", "w") as text_file:
     text_file.write("matrix_by_method_2:\n")
     text_file.write(str(M_2))
     text_file.write("\n-----------\n")
-
-# print(M_cv, M_3)

@@ -7,6 +7,15 @@ from skimage.morphology import watershed
 from scipy import ndimage
 
 
+def check_rectangle(img, x1, y1, x2, y2):
+    rect_img = img.copy()
+
+    pt1, pt2 = (x1, y1), (x2, y2)
+    cv2.rectangle(rect_img, pt1, pt2, (255, 0, 0), 2)
+    cv2.imshow("rect", rect_img)
+    cv2.waitKey(-1)
+
+
 def tilted_threshold(img, threshold):
     h, w = img.shape[:2]
 
@@ -23,10 +32,41 @@ def tilted_threshold(img, threshold):
         plane = [np.linspace(left, right, w) for _ in range(h)]
         plane = np.array(plane)
 
+    plane = plane.astype(np.uint8)
+    plane = cv2.resize(plane, (w, h))
     result = np.where(img > plane, 255, 0)
     result = result.astype(np.uint8)
 
     return result
+
+
+def cv2clahe(img, clipLimit, tileGridSize):
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    lab_planes = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=clipLimit, tileGridSize=(tileGridSize, tileGridSize))
+    lab_planes[0] = clahe.apply(lab_planes[0])
+    lab = cv2.merge(lab_planes)
+    img = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    return img
+
+
+def crop_by_mask(img, mask2):
+    img = img * mask2[:, :, np.newaxis]
+    return img
+
+
+def get_grab_mask(img, x1, y1, x2, y2):
+    h, w = img.shape[:2]
+    after = img.copy()
+    mask = np.zeros((h, w), np.uint8)
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+    rect = (x1, y1, x2 - x1, y2 - y1)
+
+    cv2.grabCut(after, mask, rect, bgdModel, fgdModel, 2, cv2.GC_INIT_WITH_RECT)
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+
+    return mask2
 
 
 def get_mask(img, threshold):
@@ -232,21 +272,12 @@ def extraction_function_3(img):
     mask = cv2.fastNlMeansDenoising(mask, None, 3, 7, 16)
     mask = cv2.erode(mask, kernel, iterations=1)
     mask = cv2.dilate(mask, kernel, iterations=1)
-    #
-    # kernel = np.ones((3, 3), np.uint8)
-    # mask = cv2.dilate(mask, kernel, iterations=3)
-
     cnts, img2 = find_contours(img, mask)
-    # img2 = distance_transform(mask)
-    # labels, colorful, cnts2 = analyse_connections(img2, mask)
-    # img2 = draw_labels(img, mask, labels)
 
     return img2, cnts
 
 
 def extraction_function_4(img):
-    img2 = img.copy()
-
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     lab_planes = cv2.split(lab)
     clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
@@ -262,6 +293,29 @@ def extraction_function_4(img):
     img = draw_labels(img, mask, labels)
 
     return img, cnts2
+
+
+def extraction_function_5(img):
+    result = img.copy()
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = 1, 1, w - 1, h - 1
+
+    # check_rectangle(img, x1, y1, x2, y2)
+    grab_mask = get_grab_mask(img, x1, y1, x2, y2)
+    img2 = crop_by_mask(img, grab_mask)
+
+    img2 = cv2.fastNlMeansDenoising(img2, None, 31, 3, 10)
+    img2 = preprocess(img2, 2, -100)
+    mask = get_mask_4(img2, threshold=[210, 160, 130, 0.2])
+    #
+    kernel = np.ones((3, 3))
+    mask = cv2.fastNlMeansDenoising(mask, None, 3, 7, 16)
+    mask = cv2.erode(mask, kernel, iterations=1)
+    # mask = cv2.dilate(mask, kernel, iterations=2)
+
+    cnts, img2 = find_contours(img, mask)
+
+    return img2, cnts
 
 
 def extraction_function_10(img):
@@ -288,7 +342,7 @@ def extraction_function_10(img):
 
 
 extraction_functions = [extraction_function_1, extraction_function_2, extraction_function_3, extraction_function_4,
-                        extraction_function_1, extraction_function_1, extraction_function_1, extraction_function_1,
+                        extraction_function_5, extraction_function_1, extraction_function_1, extraction_function_1,
                         extraction_function_1, extraction_function_10, extraction_function_1]
 
 loading_functions = [open_img_1, open_img_2, open_img_1, open_img_1, open_img_1, open_img_1,
