@@ -327,21 +327,38 @@ def extraction_function_6(img):
     cnts, img2 = find_contours(img, mask)
     return img2, cnts
 
+
 def extraction_function_7(img):
-    # img = cv2.resize(img, None, fx=2, fy=2)
-    # img = cv2clahe(img, 8, 4)
     img2 = cv2.fastNlMeansDenoising(img, None, 21, 21, 16)
     img2 = preprocess(img2, 1, 0)
-    # img2 = cv2.equalizeHist(img2)
     mask = get_mask_4(img2, threshold=[170, 150, 140, 0.5])
     kernel = np.ones((3, 3))
     mask = cv2.erode(mask, kernel, iterations=5)
-    # mask = cv2.dilate(mask, kernel, iterations=2)
-    # mask = cv2.erode(mask, kernel, iterations=1)
-    # mask = cv2.dilate(mask, kernel, iterations=1)
-    # mask = cv2.dilate(mask, kernel, iterations=1)
     cnts, img2 = find_contours(img, mask)
     return img2, cnts
+
+
+def extraction_function_9(img):
+    result = img.copy()
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = 10, 10, w - 10, h - 10
+
+    # check_rectangle(img, x1, y1, x2, y2)
+    grab_mask = get_grab_mask(img, x1, y1, x2, y2)
+    img2 = crop_by_mask(img, grab_mask)
+    #
+    img2 = cv2.fastNlMeansDenoising(img2, None, 31, 3, 10)
+    img2 = preprocess(img2, 2, -100)
+    mask = get_mask_4(img2, threshold=[10, 100, 130, 0.3])
+    #
+    # kernel = np.ones((3, 3))
+    # mask = cv2.fastNlMeansDenoising(mask, None, 3, 7, 16)
+    # mask = cv2.erode(mask, kernel, iterations=1)
+    # # mask = cv2.dilate(mask, kernel, iterations=2)
+    #
+    # cnts, img2 = find_contours(img, mask)
+
+    return mask, 3
 
 
 def extraction_function_10(img):
@@ -367,9 +384,32 @@ def extraction_function_10(img):
     return img2, cnts2
 
 
+def extraction_function_11(img):
+    result = img.copy()
+    h, w = img.shape[:2]
+    x1, y1, x2, y2 = 10, 10, w - 10, h - 10
+
+    # check_rectangle(img, x1, y1, x2, y2)
+    grab_mask = get_grab_mask(img, x1, y1, x2, y2)
+    img2 = crop_by_mask(img, grab_mask)
+    #
+    # img2 = cv2.fastNlMeansDenoising(img2, None, 31, 3, 10)
+    img2 = preprocess(img2, 1, 0)
+    mask = get_mask_4(img2, threshold=230)
+    #
+    kernel = np.ones((3, 3))
+    # mask = cv2.fastNlMeansDenoising(mask, None, 3, 7, 16)
+    mask = cv2.erode(mask, kernel, iterations=2)
+    mask = cv2.dilate(mask, kernel, iterations=6)
+    #
+    cnts, img2 = find_contours(img, mask)
+
+    return img2, cnts
+
+
 extraction_functions = [extraction_function_1, extraction_function_2, extraction_function_3, extraction_function_4,
                         extraction_function_5, extraction_function_6, extraction_function_7, extraction_function_1,
-                        extraction_function_1, extraction_function_10, extraction_function_1]
+                        extraction_function_9, extraction_function_10, extraction_function_11]
 
 loading_functions = [open_img_1, open_img_2, open_img_1, open_img_1, open_img_1, open_img_1,
                      open_img_1, open_img_1, open_img_1, open_img_1, open_img_1]
